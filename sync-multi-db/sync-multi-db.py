@@ -9,7 +9,7 @@ resource_db = config["source-db"][0]
 target_db = config["target-db"]
 sync_diff_inspector = "./sync_diff_inspector"
 dist_config = "./dist-config.toml"
-system_schemas = ["INFORMATION_SCHEMA", "mysql", "METRICS_SCHEMA", "PERFORMANCE_SCHEMA"]
+ignore_tables = ["INFORMATION_SCHEMA", "mysql", "METRICS_SCHEMA", "PERFORMANCE_SCHEMA"]
 
 
 def save_config(config):
@@ -85,7 +85,7 @@ def list_schemas(db):
         cursor.execute("show databases")
         r = cursor.fetchall()
         for s in r:
-            if s[0] not in system_schemas:
+            if s[0] not in ignore_tables:
                 schemes.append(s[0])
     cli.close()
     return schemes
