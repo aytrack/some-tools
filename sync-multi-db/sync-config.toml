@@ -1,0 +1,142 @@
+# Diff Configuration.
+
+######################### Global config #########################
+
+# The log level. You can set it to "info" or "debug".  log-level = "info"
+
+# sync-diff-inspector divides the data into multiple chunks based on the primary key,
+# unique key, or the index, and then compares the data of each chunk.
+# Uses "chunk-size" to set the size of a chunk.
+chunk-size = 10000000
+
+# The number of goroutines created to check data
+check-thread-count = 40
+
+# The proportion of sampling check. If you set it to 100, all the data is checked.
+sample-percent = 100
+
+# If enabled, the chunk's checksum is calculated and data is compared by checksum.
+# If disabled, data is compared line by line.
+use-checksum = true
+
+# If it is set to true, data is checked only by calculating checksum. Data is not checked after inspection, even if the upstream and downstream checksums are inconsistent.
+only-use-checksum = false
+
+# Whether to use the checkpoint of the last check. If it is enabled, the inspector only checks the last unverified chunks and chunks that failed the verification.
+use-checkpoint = true
+
+# If it is set to true, data check is ignored.
+# If it is set to false, data is checked.
+ignore-data-check = false
+
+# If it is set to true, the table struct comparison is ignored.
+# If set to false, the table struct is compared.
+ignore-struct-check = false
+
+# The name of the file which saves the SQL statements used to repair data
+fix-sql-file = "fix.sql"
+
+######################### Tables config #########################
+
+# To compare the data of a large number of tables with different schema names or table names, or check the data of multiple upstream sharded tables and downstream table family, use the table-rule to configure the mapping relationship. You can configure the mapping rule only for the schema or table. Also, you can configure the mapping rules for both the schema and the table.
+#[[table-rules]]
+    # schema-pattern and table-pattern support the wildcard *?
+    # schema-pattern = "test_*"
+    # table-pattern = "t_*"
+    # target-schema = "test"
+    # target-table = "t"
+
+# Configures the tables of the target database that need to be compared.
+[[check-tables]]
+    # The name of the schema in the target database
+    schema = "test"
+
+    # The list of tables that need to be checked in the target database
+    tables = ["test1", "test2", "test3"]
+
+    # Supports using regular expressions to configure tables to be checked.
+    # You need to start with '~'. For example, the following configuration checks
+    # all the tables with the prefix 'test' in the table name.
+    # tables = ["~^test.*"]
+    # The following configuration checks all the tables in the database.
+    # tables = ["~^"]
+
+# Special configuration for some tables
+# The configured table must be included in "check-tables'.
+[[table-config]]
+    # The name of the schema in the target database
+    schema = "test"
+
+    # The table name
+    table = "test3"
+
+    # Specifies the column used to divide data into chunks. If you do not configure it,
+    # sync-diff-inspector chooses an appropriate column (primary key, unique key, or a field with index).
+    index-field = "id"
+
+    # Specifies the range of the data to be checked
+    # It needs to comply with the syntax of the WHERE clause in SQL.
+    # range = "age > 10 AND age < 20"
+
+    # Sets it to "true" when comparing the data of multiple sharded tables
+    # with the data of the combined table.
+    is-sharding = false
+
+    # The collation of the string type of data might be inconsistent in some conditions.
+    # You can specify "collation" to guarantee the order consistency.
+    # You need to keep it corresponding to the "charset" setting in the database.
+    # collation = "latin1_bin"
+
+    # Ignores checking some columns such as some types (json, bit, blob, etc.)
+    # that sync-diff-inspector does not currently support.
+    # The floating-point data type behaves differently in TiDB and MySQL. You can use
+    # `ignore-columns` to skip checking these columns.
+    # ignore-columns = ["name"]
+
+# Configuration example of comparing two tables with different schema names and table names.
+[[table-config]]
+    # The name of the target schema
+    schema = "test"
+
+    # The name of the target table
+    table = "test2"
+
+    # Sets it to "false" in non-sharding scenarios.
+    is-sharding = false
+
+    # Configuration of the source data
+    [[table-config.source-tables]]
+        # The instance ID of the source schema
+        instance-id = "source-1"
+        # The name of the source schema
+        schema = "test"
+        # The name of the source table
+        table  = "test1"
+
+######################### Databases config #########################
+
+# Configuration of the source database instance
+[[source-db]]
+    host = "172.16.4.116"
+    port = 5000
+    user = "root"
+    password = ""
+    # The instance ID of the source database, the unique identifier of a database instance
+    instance-id = "source-1"
+    # Uses the snapshot function of TiDB.
+    # If enabled, the history data is used for comparison.
+    # snapshot = "2016-10-08 16:45:26"
+    # Sets the `sql-mode` of the database to parse table structures.
+    # sql-mode = ""
+
+# Configuration of the target database instance
+[target-db]
+    host = "172.16.4.116"
+    port = 5001
+    user = "root"
+    password = ""
+    # Uses the snapshot function of TiDB.
+    # If enabled, the history data is used for comparison.
+    # snapshot = "2016-10-08 16:45:26"
+    # Sets the `sql-mode` of the database to parse table structures.
+    # sql-mode = ""
